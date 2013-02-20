@@ -1,0 +1,72 @@
+{application, oakem, [
+    {description, "Simple pool based on ODBC and bindings to do basic operations with DB data"},
+    {vsn, "0.1"},
+    {registered, [oakpool_sup, oakmanager]},
+    {applications, [
+        kernel,
+        stdlib
+    ]},
+    {mod, {oakem_app, []}},
+    {env, [
+        {pools, [
+            {db_apool1, [
+                {query_max_time, 60000},
+                {size, 4},
+                {connection_string, "DSN=odbc-test;UID=developer;PWD=developer"},
+                {auto_commit, on}
+            ]},
+            {db_tpool1, [
+                {query_max_time, 60000},
+                {size, 2},
+                {connection_string, "DSN=odbc-test;UID=developer;PWD=developer"},
+                {auto_commit, off}
+            ]}
+        ]},
+        {entities, [
+            [
+                {name, provider}, {table, "providers"},
+                {fields, [
+                    % look #db_field{} record description for default values and fields list
+                    [{name,"p_id"}, {mutable, false}, {key, true}],
+                    [{name, "p_name"}, {sql_type, {sql_varchar, 1024}}],
+                    [{name, "p_parent_id"}],
+                    [{name, "creator"}, {mutable, false}],
+                    [{name, "date_create"}, {select, "convert(varchar, date_create, 121) AS date_create"},
+                        {mutable, false}, {sql_type, {sql_varchar, 255}}]
+                ]}, {deps, [
+                    [{entity, consumer}, {name, "consumers"}, {fields, ["p_id"]}, {type, one_to_many}],
+                    [{entity, provider}, {name, "parent"}, {fields, [{"p_parent_id", "p_id"}]}, {type, many_to_one}],
+                    [{entity, provider}, {name, "children"}, {fields, [{"p_id","p_parent_id"}]}, {type, one_to_one}],
+                    [{entity, region}, {name, "regions"}, {fields, [{src, "p_id"}, {dst, {"reg_id", "r_id"}}]}, {type, many_to_many},
+                        {via, {"providers_regions", ["extra_cost"]}}]
+                ]}
+            ],
+            [
+                {name, consumer}, {table, "consumers"},
+                {fields, [
+                    [{name,"c_id"}, {mutable, false}, {key, true}],
+                    [{name, "c_name"}, {sql_type, {sql_varchar, 1024}}],
+                    [{name,"p_id"}],
+                    [{name, "creator"}, {mutable, false}],
+                    [{name, "date_create"}, {select, "convert(varchar, date_create, 121) AS date_create"},
+                        {mutable, false}, {sql_type, {sql_varchar, 255}}]
+                ]}, {deps, [
+                    [{entity, provider}, {name, "provider"}, {fields, ["p_id"]}, {type, many_to_one}]
+                ]}
+            ],
+            [
+                {name, region}, {table, "regions"},
+                {fields, [
+                    [{name,"r_id"}, {mutable, false}, {key, true}],
+                    [{name, "r_name"}, {sql_type, {sql_varchar, 1024}}],
+                    [{name, "creator"}, {mutable, false}],
+                    [{name, "date_create"}, {select, "convert(varchar, date_create, 121) AS date_create"},
+                        {mutable, false}, {sql_type, {sql_varchar, 255}}]
+                ]}, {deps, [
+                    [{entity, provider}, {name, "providers"}, {fields, [{src, {"r_id", "reg_id"}}, {dst, "p_id"}]},
+                        {type, many_to_many}, {via, "providers_regions"}]
+                ]}
+            ]
+        ]}
+    ]}
+]}.

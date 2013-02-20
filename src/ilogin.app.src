@@ -1,0 +1,9 @@
+%% -*- erlang -*-
+{application, ilogin,
+ [{description, "ilogin"},
+  {vsn, "0.1"},
+  {modules, []},
+  {registered, []},
+  {mod, {'ilogin_app', []}},
+  {env, []},
+  {applications, [kernel, stdlib, crypto]}]}.
